@@ -35,8 +35,8 @@ namespace Graph.Items
 		public event EventHandler<NodeItemEventArgs> Clicked;
 		public event EventHandler<NodeItemEventArgs> ValueChanged;
 
-		public NodeSliderItem(string text, float sliderSize, float textSize, float minValue, float maxValue, float defaultValue, bool inputEnabled, bool outputEnabled) :
-			base(inputEnabled, outputEnabled)
+		public NodeSliderItem(string name, string text, float sliderSize, float textSize, float minValue, float maxValue, float defaultValue, InOutMode ioMode = InOutMode.NONE) :
+			base(name, ioMode)
 		{
 			this.Text = text;
 			this.MinimumSliderSize = sliderSize;
@@ -137,7 +137,7 @@ namespace Graph.Items
 					var size = new Size(GraphConstants.MinimumItemWidth, GraphConstants.MinimumItemHeight);
 					var sliderWidth = this.MinimumSliderSize + SliderBoxSize;
 
-					this.textSize			= (SizeF)graphics.MeasureString(this.Text, SystemFonts.MenuFont, size, GraphConstants.LeftMeasureTextStringFormat);
+					this.textSize			= (SizeF)graphics.MeasureString(this.Text, SystemFonts.MenuFont, size, GraphConstants.LeftMeasureTextStringFormatVerticalCenter);
 					this.textSize.Width		= Math.Max(this.TextSize, this.textSize.Width + 4);
 					this.itemSize.Width		= Math.Max(size.Width, this.textSize.Width + sliderWidth + Spacing);
 					this.itemSize.Height	= Math.Max(size.Height, this.textSize.Height);
@@ -175,7 +175,7 @@ namespace Graph.Items
 			sliderBox.Width = SliderBoxSize;
 			sliderBox.X = sliderRect.X + (this.Value * this.sliderRect.Width) / valueSize;
 
-			graphics.DrawString(this.Text, SystemFonts.MenuFont, Brushes.Black, textRect, GraphConstants.LeftTextStringFormat);
+			graphics.DrawString(this.Text, SystemFonts.MenuFont, Brushes.Black, textRect, GraphConstants.LeftTextStringFormatVerticalCenter);
 
 			using (var path = GraphRenderer.CreateRoundedRectangle(sliderRect.Size, sliderRect.Location))
 			{
@@ -192,5 +192,18 @@ namespace Graph.Items
 			else
 				graphics.DrawRectangle(Pens.Black, sliderBox.X, sliderBox.Y, sliderBox.Width, sliderBox.Height);
 		}
+
+        public override void WriteNodeItemData(System.IO.StreamWriter file)
+        {
+            file.WriteLine("SET \"" + Name + "\"" + ",\"" + Value.ToString() + "\"");
+        }
+        public override void SetNodeItemData(string val)
+        {
+            Value = float.Parse(val);
+        }
+        public override string GetNodeItemData()
+        {
+            return Value.ToString();
+        }
 	}
 }

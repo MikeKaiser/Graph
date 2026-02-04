@@ -41,7 +41,7 @@ namespace Graph.Items
 		/// <param name="defaultValue">The value the slider should start with.</param>
 		/// <param name="inputEnabled">Does the item accept an input to be connected?</param>
 		/// <param name="outputEnabled">Does the item accept an output to be connected?</param>
-		public NodeNumericSliderItem( string text, float sliderSize, float textSize, float minValue, float maxValue, float defaultValue, bool inputEnabled, bool outputEnabled ) : base( text, sliderSize, textSize, minValue, maxValue, defaultValue, inputEnabled, outputEnabled ) {}
+		public NodeNumericSliderItem( string name, string text, float sliderSize, float textSize, float minValue, float maxValue, float defaultValue, InOutMode ioMode ) : base( name, text, sliderSize, textSize, minValue, maxValue, defaultValue, ioMode ) {}
 
 		/// <summary>
 		/// Render the slider.
@@ -81,7 +81,7 @@ namespace Graph.Items
 			sliderBox.Height	= SliderHeight;
 
 			// Draw label
-			graphics.DrawString(this.Text, SystemFonts.MenuFont, Brushes.Black, textRect, GraphConstants.LeftTextStringFormat);
+			graphics.DrawString(this.Text, SystemFonts.MenuFont, Brushes.Black, textRect, GraphConstants.LeftTextStringFormatVerticalCenter);
 			
 			// Draw inner rectangle
 			graphics.FillRectangle(Brushes.LightGray, sliderBox.X, sliderBox.Y, sliderBox.Width, sliderBox.Height);
@@ -99,7 +99,7 @@ namespace Graph.Items
 				graphics.DrawLine(Pens.Black, sliderBox.X + sliderBox.Width, sliderBox.Y, sliderBox.X + sliderBox.Width, sliderBox.Y + sliderBox.Height);
 
 			// Draw value
-			graphics.DrawString(this.Value.ToString(), SystemFonts.MenuFont, Brushes.Black, sliderRect, GraphConstants.LeftTextStringFormat);
+			graphics.DrawString(this.Value.ToString(), SystemFonts.MenuFont, Brushes.Black, sliderRect, GraphConstants.LeftTextStringFormatVerticalCenter);
 		}
 	}
 }

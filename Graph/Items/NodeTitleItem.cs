@@ -56,7 +56,7 @@ namespace Graph.Items
 				if (this.TextSize.IsEmpty)
 				{
 					var size = new Size(GraphConstants.MinimumItemWidth, GraphConstants.TitleHeight);
-					this.TextSize			= graphics.MeasureString(this.Title, SystemFonts.CaptionFont, size, GraphConstants.TitleMeasureStringFormat);
+					this.TextSize			= graphics.MeasureString(this.Title, SystemFonts.CaptionFont, size, GraphConstants.TitleMeasureStringFormatVerticalCenter);
 
 					this.TextSize.Width		= Math.Max(size.Width,  this.TextSize.Width + (GraphConstants.CornerSize * 2));
 					this.TextSize.Height	= Math.Max(size.Height, this.TextSize.Height) + GraphConstants.TopHeight;
@@ -78,9 +78,9 @@ namespace Graph.Items
 			location.Y += GraphConstants.TopHeight;
 
 			if ((state & RenderState.Hover) == RenderState.Hover)
-				graphics.DrawString(this.Title, SystemFonts.CaptionFont, Brushes.White, new RectangleF(location, size), GraphConstants.TitleStringFormat);
+				graphics.DrawString(this.Title, SystemFonts.CaptionFont, Brushes.White, new RectangleF(location, size), GraphConstants.TitleStringFormatVerticalCenter);
 			else
-				graphics.DrawString(this.Title, SystemFonts.CaptionFont, Brushes.Black, new RectangleF(location, size), GraphConstants.TitleStringFormat);
+				graphics.DrawString(this.Title, SystemFonts.CaptionFont, Brushes.Black, new RectangleF(location, size), GraphConstants.TitleStringFormatVerticalCenter);
 		}
 	}
 }

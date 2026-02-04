@@ -446,6 +446,96 @@ namespace Graph
 		readonly List<Node> graphNodes = new List<Node>();
 		[Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
 		public IEnumerable<Node> Nodes { get { return graphNodes; } }
+
+        public void CalculateTreeDepthsForAllNodes()
+        {
+            bool changed = true;
+
+            //foreach( Node n in graphNodes )
+            //   n.m_graphDepth = 0;
+
+            // Gather root nodes and sort vertically
+            List<Node> roots = GatherAllRootNodes();
+
+
+            // For each root node, set it's depth to a value that will ensure its position relative to all other nodes in the file
+            int island = 0;
+            foreach (Graph.Node n in roots)
+            {
+                n.m_graphDepth = island;
+                island += 65536;
+            }
+
+            // Propegate tree depths down to the children.
+            while( changed )
+            {
+                changed = false;
+
+                foreach( Node n in graphNodes )
+                {
+                    foreach( NodeConnection nc in n.connections )
+                    {
+                        if( nc.To.Node == n ) // if the [To] field of the connection is this node, then it's an incoming connection from a parent
+                        {
+                            if( n.m_graphDepth <= nc.From.Node.m_graphDepth )
+                            {
+                                n.m_graphDepth = nc.From.Node.m_graphDepth + 1;
+                                changed = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        public List<Node> GetSortedNodeList()
+        {
+            CalculateTreeDepthsForAllNodes();
+
+            List<Node> ret = new List<Node>();
+            foreach( Node n in graphNodes )
+                ret.Add( n );
+
+            ret.Sort
+            (
+                delegate(Node a, Node b)
+                {
+                    return a.m_graphDepth.CompareTo( b.m_graphDepth );
+                }
+            );
+
+            return ret;
+        }
+
+        public List<Node> GatherAllRootNodes()
+        {
+            List<Node> ret = new List<Node>();
+            foreach( Node n in graphNodes )
+            {
+                bool hasParents = false;
+                foreach( NodeConnection nc in n.connections )
+                {
+                    if( nc.To.Node == n )
+                    {
+                        hasParents = true;
+                        break;
+                    }
+                }
+                if (hasParents == false)
+                {
+                    ret.Add( n );
+                }
+            }
+
+            ret.Sort
+            (
+                delegate( Node a, Node b )
+                {
+                    return a.Location.Y.CompareTo( b.Location.Y );
+                }
+            );
+            return ret;
+        }
 		#endregion
 
 
@@ -472,29 +562,15 @@ namespace Graph
 		PointF					originalLocation;
 		Point					originalMouseLocation;
 		
-		PointF					translation = new PointF();
-		float					zoom = 1.0f;
 
 		
 		#region UpdateMatrices
-		readonly Matrix			transformation = new Matrix();
-		readonly Matrix			inverse_transformation = new Matrix();
+		Matrix			m_worldToScreenTransform = new Matrix();
+		Matrix			m_screenToWorldTransform = new Matrix();
 		void UpdateMatrices()
 		{
-			if (zoom < 0.25f) zoom = 0.25f;
-			if (zoom > 5.00f) zoom = 5.00f;
-			var center = new PointF(this.Width / 2.0f, this.Height / 2.0f);
-			transformation.Reset();
-			transformation.Translate(translation.X, translation.Y);
-			transformation.Translate(center.X, center.Y);
-			transformation.Scale(zoom, zoom);
-			transformation.Translate(-center.X, -center.Y);
-
-			inverse_transformation.Reset();
-			inverse_transformation.Translate(center.X, center.Y);
-			inverse_transformation.Scale(1.0f / zoom, 1.0f / zoom);
-			inverse_transformation.Translate(-center.X, -center.Y);
-			inverse_transformation.Translate(-translation.X, -translation.Y);
+			m_screenToWorldTransform = m_worldToScreenTransform.Clone();
+			m_screenToWorldTransform.Invert();
 		}
 		#endregion
 
@@ -902,7 +978,7 @@ namespace Graph
 		PointF GetTransformedLocation()
 		{
 			var points = new PointF[] { snappedLocation };
-			inverse_transformation.TransformPoints(points);
+			m_screenToWorldTransform.TransformPoints(points);
 			var transformed_location = points[0];
 
 			if (abortDrag)
@@ -945,7 +1021,7 @@ namespace Graph
 			e.Graphics.InterpolationMode	= InterpolationMode.HighQualityBicubic;
 
 			UpdateMatrices();			
-			e.Graphics.Transform			= transformation;
+			e.Graphics.Transform			= m_worldToScreenTransform;
 
 			OnDrawBackground(e);
 			
@@ -963,8 +1039,11 @@ namespace Graph
 				e.Graphics.DrawRectangle(Pens.DarkGray, marque_rectangle.X, marque_rectangle.Y, marque_rectangle.Width, marque_rectangle.Height);
 			}
 
-			GraphRenderer.PerformLayout(e.Graphics, graphNodes);
-			GraphRenderer.Render(e.Graphics, graphNodes, ShowLabels);
+			PointF minBounds = TransformPoint( m_screenToWorldTransform, new Point( 0, 0 ) );
+			PointF maxBounds = TransformPoint( m_screenToWorldTransform, new Point( Width, Height ) );
+
+			GraphRenderer.PerformLayout(e.Graphics, graphNodes, minBounds, maxBounds );
+			GraphRenderer.Render(e.Graphics, graphNodes, minBounds, maxBounds, ShowLabels);
 			
 			if (command == CommandMode.Edit)
 			{
@@ -1007,7 +1086,7 @@ namespace Graph
 								new PointF(e.ClipRectangle.Right, e.ClipRectangle.Bottom)
 							};
 
-			inverse_transformation.TransformPoints(points);
+			m_screenToWorldTransform.TransformPoints(points);
 
 			var left			= points[0].X;
 			var right			= points[1].X;
@@ -1018,7 +1097,7 @@ namespace Graph
 			var smallXOffset	= ((float)Math.Round(left / smallStepScaled) * smallStepScaled);
 			var smallYOffset	= ((float)Math.Round(top  / smallStepScaled) * smallStepScaled);
 
-			if (smallStepScaled > 3)
+			if (smallStepScaled > 3 && m_worldToScreenTransform.Elements[0] > 0.3f)
 			{
 				for (float x = smallXOffset; x < right; x += smallStepScaled)
 					e.Graphics.DrawLine(SmallGridPen, x, top, x, bottom);
@@ -1043,14 +1122,40 @@ namespace Graph
 		#endregion
 
 
+		protected static PointF TransformPoint( Matrix m, PointF p )
+		{
+			PointF[] q = {
+				p
+			};
+			m.TransformPoints(q);
+			return q[0];
+		}
+
+		protected static PointF TransformPoint( Matrix m, Point p )
+		{
+			PointF[] q = {
+				new PointF( (float)p.X, (float)p.Y )
+			};
+			m.TransformPoints(q);
+			return q[0];
+		}
 
 		#region OnMouseWheel
+
+		void ScaleDeltaMouseWheel( float wheelDelta, int locX, int locY )
+		{
+			PointF wsLoc = TransformPoint( m_screenToWorldTransform, new Point( locX, locY ) );
+
+			float delta = (float)Math.Pow(2, wheelDelta / 480.0f);
+			m_worldToScreenTransform.Translate( wsLoc.X, wsLoc.Y);
+			m_worldToScreenTransform.Scale( delta, delta );
+			m_worldToScreenTransform.Translate( -wsLoc.X, -wsLoc.Y);
+		}
+
 		protected override void OnMouseWheel(MouseEventArgs e)
 		{
 			base.OnMouseWheel(e);
-
-			zoom *= (float)Math.Pow(2, e.Delta / 480.0f);
-
+			ScaleDeltaMouseWheel( e.Delta, e.X, e.Y );
 			this.Refresh();
 		}
 		#endregion
@@ -1072,7 +1177,7 @@ namespace Graph
 			snappedLocation = lastLocation = e.Location;
 			
 			var points = new PointF[] { e.Location };
-			inverse_transformation.TransformPoints(points);
+			m_screenToWorldTransform.TransformPoints(points);
 			var transformed_location = points[0];
 
 			originalLocation = transformed_location;
@@ -1240,7 +1345,7 @@ namespace Graph
 			}
 
 			points = new PointF[] { originalLocation };
-			transformation.TransformPoints(points);
+			m_worldToScreenTransform.TransformPoints(points);
 			originalMouseLocation = this.PointToScreen(new Point((int)points[0].X, (int)points[0].Y));
 		}
 		#endregion
@@ -1248,6 +1353,9 @@ namespace Graph
 		#region OnMouseMove
 		protected override void OnMouseMove(MouseEventArgs e)
 		{
+			PointF wsLoc = TransformPoint( m_screenToWorldTransform, new Point( e.X, e.Y ) );
+			Console.WriteLine("Mouse Move: " + e.X.ToString() + "," + e.Y.ToString() + "   View Mat: " + m_worldToScreenTransform.ToString() + " WS: " + wsLoc.ToString());
+
 			base.OnMouseMove(e);
 			
 			if (DragElement == null &&
@@ -1268,19 +1376,19 @@ namespace Graph
 				transformed_location = originalLocation;
 
 				var points = new PointF[] { originalLocation };
-				transformation.TransformPoints(points);
+				m_worldToScreenTransform.TransformPoints(points);
 				currentLocation = new Point((int)points[0].X, (int)points[0].Y);
 			} else
 			{
 				currentLocation = e.Location;
 
 				var points = new PointF[] { currentLocation };
-				inverse_transformation.TransformPoints(points);
+				m_screenToWorldTransform.TransformPoints(points);
 				transformed_location = points[0];
 			}
 
-			var deltaX = (lastLocation.X - currentLocation.X) / zoom;
-			var deltaY = (lastLocation.Y - currentLocation.Y) / zoom;
+			var deltaX = (lastLocation.X - currentLocation.X) / m_worldToScreenTransform.Elements[0];
+			var deltaY = (lastLocation.Y - currentLocation.Y) / m_worldToScreenTransform.Elements[0];
 
 			
 
@@ -1297,7 +1405,7 @@ namespace Graph
 					if (mouseMoved &&
 						(Math.Abs(deltaY) > 0))
 					{
-						zoom *= (float)Math.Pow(2, deltaY / 100.0f);
+						ScaleDeltaMouseWheel( deltaY, 0, 0 );
 						Cursor.Position = this.PointToScreen(lastLocation);
 						snappedLocation = //lastLocation = 
 							currentLocation;
@@ -1317,8 +1425,8 @@ namespace Graph
 						(Math.Abs(deltaX) > 0) ||
 						(Math.Abs(deltaY) > 0))
 					{
-						translation.X -= deltaX * zoom;
-						translation.Y -= deltaY * zoom;
+						//m_worldToScreenTransform.Translate( -deltaX * m_worldToScreenTransform.Elements[0], -deltaY * m_worldToScreenTransform.Elements[0] );
+						m_worldToScreenTransform.Translate( -deltaX, -deltaY );
 						snappedLocation = lastLocation = currentLocation;
 						this.Refresh();
 					}
@@ -1599,7 +1707,7 @@ namespace Graph
 					var pre_points = new PointF[] { 
 						new PointF((destinationConnector.bounds.Left + destinationConnector.bounds.Right) / 2,
 									(destinationConnector.bounds.Top  + destinationConnector.bounds.Bottom) / 2) };
-					transformation.TransformPoints(pre_points);
+					m_worldToScreenTransform.TransformPoints(pre_points);
 					snappedLocation = pre_points[0];
 				}
 			}
@@ -1679,14 +1787,14 @@ namespace Graph
 					transformed_location = originalLocation;
 
 					var points = new PointF[] { originalLocation };
-					transformation.TransformPoints(points);
+					m_worldToScreenTransform.TransformPoints(points);
 					currentLocation = new Point((int)points[0].X, (int)points[0].Y);
 				} else
 				{
 					currentLocation = e.Location;
 
 					var points = new PointF[] { currentLocation };
-					inverse_transformation.TransformPoints(points);
+					m_screenToWorldTransform.TransformPoints(points);
 					transformed_location = points[0];
 				}
 
@@ -1817,7 +1925,7 @@ namespace Graph
 				return;
 
 			var points = new Point[] { lastLocation };
-			inverse_transformation.TransformPoints(points);
+			m_screenToWorldTransform.TransformPoints(points);
 			var transformed_location = points[0];
 
 			var element = FindElementAt(transformed_location);
@@ -1858,7 +1966,7 @@ namespace Graph
 					return;
 
 				var points = new Point[] { lastLocation };
-				inverse_transformation.TransformPoints(points);
+				m_screenToWorldTransform.TransformPoints(points);
 				var transformed_location = points[0];
 
 				if (e.Button == MouseButtons.Right)
@@ -2011,7 +2119,7 @@ namespace Graph
 			location.Y -= ((dragNode.titleItem.bounds.Bottom - dragNode.titleItem.bounds.Top) / 2);
 			
 			var points = new PointF[] { location };
-			inverse_transformation.TransformPoints(points);
+			m_screenToWorldTransform.TransformPoints(points);
 			location = points[0];
 
 			if (dragNode.Location != location)
@@ -2041,5 +2149,65 @@ namespace Graph
 			base.OnDragDrop(drgevent);
 		}
 		#endregion
+
+		public void DistributeNodes( int iterations )
+		{
+			// For each connection, move the two nodes closer to each other.
+			// The connections aren't stored in a convenient array so we just collect them into a set.
+			HashSet<NodeConnection> connections = new HashSet<NodeConnection>();
+			foreach( var node in Nodes )
+			{
+				foreach( var connection in node.connections )
+				{
+					connections.Add( connection );
+				}
+			}
+
+			for( int i=0; i<iterations; ++i )
+			{
+				// Move closer to connections
+				foreach( var connection in connections )
+				{
+					Vec2 a = new Vec2(connection.From.Node.Location);
+					Vec2 b = new Vec2(connection.To.Node.Location);
+					Vec2 delta = (b - a).Normalised();
+					delta.x = 0;
+					delta.y *= 5.0f;
+
+					connection.From.Node.Location = (a + delta).AsPointF();
+					connection.To.Node.Location = (b - delta).AsPointF();
+				}
+			}
+		}
+
+		public void SortNodesVerticallyOnConnectionCount()
+		{
+			graphNodes.Sort(
+				delegate( Node x, Node y )
+				{
+					return y.connections.Count.CompareTo( x.connections.Count );
+				}
+			);
+
+			for( int i=0; i<graphNodes.Count; ++i )
+			{
+				graphNodes[i].Location = new PointF(graphNodes[i].Location.X, i * 50);
+			}
+		}
+
+		// ForceLayout should be called at least once after data is loaded
+		// to ensure all nodes have been layed out.
+		// This is because we now selectively only layout items within the
+		// screen bounds so anything offscreen needs to be forced before
+		// they are valid.
+		public void ForceLayout()
+		{
+			GraphRenderer.PerformLayout(
+				CreateGraphics(), 
+				graphNodes, 
+				new PointF(float.MinValue, float.MinValue), 
+				new PointF(float.MaxValue, float.MaxValue)
+			);
+		}
 	}
 }

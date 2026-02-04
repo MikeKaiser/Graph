@@ -42,7 +42,7 @@ namespace Graph
 		public const int HorizontalSpacing		= 2;
 		public const int NodeExtraWidth			= ((int)GraphConstants.ConnectorSize + (int)GraphConstants.HorizontalSpacing) * 2;
 		
-		internal const TextFormatFlags TitleTextFlags	=	TextFormatFlags.ExternalLeading |
+		internal const TextFormatFlags TitleTextFlagsVerticalCenter	=	TextFormatFlags.ExternalLeading |
 															TextFormatFlags.GlyphOverhangPadding |
 															TextFormatFlags.HorizontalCenter |
 															TextFormatFlags.NoClipping |
@@ -50,7 +50,7 @@ namespace Graph
 															TextFormatFlags.NoPrefix |
 															TextFormatFlags.VerticalCenter;
 
-		internal const TextFormatFlags CenterTextFlags	=	TextFormatFlags.ExternalLeading |
+		internal const TextFormatFlags CenterTextFlagsVerticalCenter =	TextFormatFlags.ExternalLeading |
 															TextFormatFlags.GlyphOverhangPadding |
 															TextFormatFlags.HorizontalCenter |
 															TextFormatFlags.NoClipping |
@@ -58,7 +58,7 @@ namespace Graph
 															TextFormatFlags.NoPrefix |
 															TextFormatFlags.VerticalCenter;
 
-		internal const TextFormatFlags LeftTextFlags	=	TextFormatFlags.ExternalLeading |
+		internal const TextFormatFlags LeftTextFlagsVerticalCenter	=	TextFormatFlags.ExternalLeading |
 															TextFormatFlags.GlyphOverhangPadding |
 															TextFormatFlags.Left |
 															TextFormatFlags.NoClipping |
@@ -66,7 +66,7 @@ namespace Graph
 															TextFormatFlags.NoPrefix |
 															TextFormatFlags.VerticalCenter;
 
-		internal const TextFormatFlags RightTextFlags	=	TextFormatFlags.ExternalLeading |
+		internal const TextFormatFlags RightTextFlagsVerticalCenter	=	TextFormatFlags.ExternalLeading |
 															TextFormatFlags.GlyphOverhangPadding |
 															TextFormatFlags.Right |
 															TextFormatFlags.NoClipping |
@@ -74,53 +74,141 @@ namespace Graph
 															TextFormatFlags.NoPrefix |
 															TextFormatFlags.VerticalCenter;
 
-		internal static readonly StringFormat TitleStringFormat;
-		internal static readonly StringFormat CenterTextStringFormat;
-		internal static readonly StringFormat LeftTextStringFormat;
-		internal static readonly StringFormat RightTextStringFormat;
-		internal static readonly StringFormat TitleMeasureStringFormat;
-		internal static readonly StringFormat CenterMeasureTextStringFormat;
-		internal static readonly StringFormat LeftMeasureTextStringFormat;
-		internal static readonly StringFormat RightMeasureTextStringFormat;
+		internal const TextFormatFlags TitleTextFlagsVerticalTop	=	TextFormatFlags.ExternalLeading |
+															            TextFormatFlags.GlyphOverhangPadding |
+															            TextFormatFlags.HorizontalCenter |
+															            TextFormatFlags.NoClipping |
+															            TextFormatFlags.NoPadding |
+															            TextFormatFlags.NoPrefix |
+															            TextFormatFlags.Top;
+
+		internal const TextFormatFlags CenterTextFlagsVerticalTop =	TextFormatFlags.ExternalLeading |
+															            TextFormatFlags.GlyphOverhangPadding |
+															            TextFormatFlags.HorizontalCenter |
+															            TextFormatFlags.NoClipping |
+															            TextFormatFlags.NoPadding |
+															            TextFormatFlags.NoPrefix |
+															            TextFormatFlags.Top;
+
+		internal const TextFormatFlags LeftTextFlagsVerticalTop	=	TextFormatFlags.ExternalLeading |
+															            TextFormatFlags.GlyphOverhangPadding |
+															            TextFormatFlags.Left |
+															            TextFormatFlags.NoClipping |
+															            TextFormatFlags.NoPadding |
+															            TextFormatFlags.NoPrefix |
+															            TextFormatFlags.Top;
+
+		internal const TextFormatFlags RightTextFlagsVerticalTop	=	TextFormatFlags.ExternalLeading |
+															            TextFormatFlags.GlyphOverhangPadding |
+															            TextFormatFlags.Right |
+															            TextFormatFlags.NoClipping |
+															            TextFormatFlags.NoPadding |
+															            TextFormatFlags.NoPrefix |
+															            TextFormatFlags.Top;
+
+		internal const TextFormatFlags TitleTextFlagsVerticalBottom	=	TextFormatFlags.ExternalLeading |
+															            TextFormatFlags.GlyphOverhangPadding |
+															            TextFormatFlags.HorizontalCenter |
+															            TextFormatFlags.NoClipping |
+															            TextFormatFlags.NoPadding |
+															            TextFormatFlags.NoPrefix |
+															            TextFormatFlags.Bottom;
+
+		internal const TextFormatFlags CenterTextFlagsVerticalBottom =  TextFormatFlags.ExternalLeading |
+															            TextFormatFlags.GlyphOverhangPadding |
+															            TextFormatFlags.HorizontalCenter |
+															            TextFormatFlags.NoClipping |
+															            TextFormatFlags.NoPadding |
+															            TextFormatFlags.NoPrefix |
+															            TextFormatFlags.Bottom;
+
+		internal const TextFormatFlags LeftTextFlagsVerticalBottom	=   TextFormatFlags.ExternalLeading |
+															            TextFormatFlags.GlyphOverhangPadding |
+															            TextFormatFlags.Left |
+															            TextFormatFlags.NoClipping |
+															            TextFormatFlags.NoPadding |
+															            TextFormatFlags.NoPrefix |
+															            TextFormatFlags.Bottom;
+
+		internal const TextFormatFlags RightTextFlagsVerticalBottom	=	TextFormatFlags.ExternalLeading |
+															            TextFormatFlags.GlyphOverhangPadding |
+															            TextFormatFlags.Right |
+															            TextFormatFlags.NoClipping |
+															            TextFormatFlags.NoPadding |
+															            TextFormatFlags.NoPrefix |
+															            TextFormatFlags.Bottom;
+		internal static readonly StringFormat TitleStringFormatVerticalCenter;
+		internal static readonly StringFormat CenterTextStringFormatVerticalCenter;
+		internal static readonly StringFormat LeftTextStringFormatVerticalCenter;
+		internal static readonly StringFormat RightTextStringFormatVerticalCenter;
+		internal static readonly StringFormat TitleMeasureStringFormatVerticalCenter;
+		internal static readonly StringFormat CenterMeasureTextStringFormatVerticalCenter;
+		internal static readonly StringFormat LeftMeasureTextStringFormatVerticalCenter;
+		internal static readonly StringFormat RightMeasureTextStringFormatVerticalCenter;
+
+		internal static readonly StringFormat LeftTextStringFormatVerticalTop;
+		internal static readonly StringFormat LeftTextStringFormatVerticalBottom;
+		internal static readonly StringFormat LeftMeasureStringFormatVerticalTop;
+		internal static readonly StringFormat LeftMeasureStringFormatVerticalBottom;
 
 		static GraphConstants()
 		{
 			var defaultFlags = StringFormatFlags.NoClip | StringFormatFlags.NoWrap | StringFormatFlags.LineLimit;
-			TitleStringFormat							= new StringFormat(defaultFlags);
-			TitleMeasureStringFormat					= new StringFormat(defaultFlags);
-			TitleMeasureStringFormat.Alignment			=
-			TitleStringFormat.Alignment					= StringAlignment.Center;
-			TitleMeasureStringFormat.LineAlignment		= 
-			TitleStringFormat.LineAlignment				= StringAlignment.Center;
-			TitleStringFormat.Trimming					= StringTrimming.EllipsisCharacter;
-			TitleMeasureStringFormat.Trimming			= StringTrimming.None;
+			TitleStringFormatVerticalCenter							= new StringFormat(defaultFlags);
+			TitleMeasureStringFormatVerticalCenter					= new StringFormat(defaultFlags);
+			TitleMeasureStringFormatVerticalCenter.Alignment		=
+			TitleStringFormatVerticalCenter.Alignment				= StringAlignment.Center;
+			TitleMeasureStringFormatVerticalCenter.LineAlignment	= 
+			TitleStringFormatVerticalCenter.LineAlignment			= StringAlignment.Center;
+			TitleStringFormatVerticalCenter.Trimming				= StringTrimming.EllipsisCharacter;
+			TitleMeasureStringFormatVerticalCenter.Trimming			= StringTrimming.None;
 
-			CenterTextStringFormat						= new StringFormat(defaultFlags);
-			CenterMeasureTextStringFormat				= new StringFormat(defaultFlags);
-			CenterMeasureTextStringFormat.Alignment		= 
-			CenterTextStringFormat.Alignment			= StringAlignment.Center;
-			CenterMeasureTextStringFormat.LineAlignment = 
-			CenterTextStringFormat.LineAlignment		= StringAlignment.Center;
-			CenterTextStringFormat.Trimming				= StringTrimming.EllipsisCharacter;
-			CenterMeasureTextStringFormat.Trimming		= StringTrimming.None;
+			CenterTextStringFormatVerticalCenter					= new StringFormat(defaultFlags);
+			CenterMeasureTextStringFormatVerticalCenter				= new StringFormat(defaultFlags);
+			CenterMeasureTextStringFormatVerticalCenter.Alignment	= 
+			CenterTextStringFormatVerticalCenter.Alignment			= StringAlignment.Center;
+			CenterMeasureTextStringFormatVerticalCenter.LineAlignment = 
+			CenterTextStringFormatVerticalCenter.LineAlignment		= StringAlignment.Center;
+			CenterTextStringFormatVerticalCenter.Trimming			= StringTrimming.EllipsisCharacter;
+			CenterMeasureTextStringFormatVerticalCenter.Trimming	= StringTrimming.None;
 
-			LeftTextStringFormat						= new StringFormat(defaultFlags);
-			LeftMeasureTextStringFormat					= new StringFormat(defaultFlags);
-			LeftMeasureTextStringFormat.Alignment		= 
-			LeftTextStringFormat.Alignment				= StringAlignment.Near;
-			LeftMeasureTextStringFormat.LineAlignment	= 
-			LeftTextStringFormat.LineAlignment			= StringAlignment.Center;
-			LeftTextStringFormat.Trimming				= StringTrimming.EllipsisCharacter;
-			LeftMeasureTextStringFormat.Trimming		= StringTrimming.None;
+			LeftTextStringFormatVerticalCenter						= new StringFormat(defaultFlags);
+			LeftMeasureTextStringFormatVerticalCenter				= new StringFormat(defaultFlags);
+			LeftMeasureTextStringFormatVerticalCenter.Alignment		= 
+			LeftTextStringFormatVerticalCenter.Alignment			= StringAlignment.Near;
+			LeftMeasureTextStringFormatVerticalCenter.LineAlignment	= 
+			LeftTextStringFormatVerticalCenter.LineAlignment		= StringAlignment.Center;
+			LeftTextStringFormatVerticalCenter.Trimming				= StringTrimming.EllipsisCharacter;
+			LeftMeasureTextStringFormatVerticalCenter.Trimming		= StringTrimming.None;
 
-			RightTextStringFormat						= new StringFormat(defaultFlags);
-			RightMeasureTextStringFormat				= new StringFormat(defaultFlags);
-			RightMeasureTextStringFormat.Alignment		= 
-			RightTextStringFormat.Alignment				= StringAlignment.Far;
-			RightMeasureTextStringFormat.LineAlignment	= 
-			RightTextStringFormat.LineAlignment			= StringAlignment.Center;
-			RightTextStringFormat.Trimming				= StringTrimming.EllipsisCharacter;
-			RightMeasureTextStringFormat.Trimming		= StringTrimming.None;
+			RightTextStringFormatVerticalCenter						= new StringFormat(defaultFlags);
+			RightMeasureTextStringFormatVerticalCenter				= new StringFormat(defaultFlags);
+			RightMeasureTextStringFormatVerticalCenter.Alignment	= 
+			RightTextStringFormatVerticalCenter.Alignment			= StringAlignment.Far;
+			RightMeasureTextStringFormatVerticalCenter.LineAlignment= 
+			RightTextStringFormatVerticalCenter.LineAlignment		= StringAlignment.Center;
+			RightTextStringFormatVerticalCenter.Trimming			= StringTrimming.EllipsisCharacter;
+			RightMeasureTextStringFormatVerticalCenter.Trimming		= StringTrimming.None;
+
+			LeftTextStringFormatVerticalTop 				        = new StringFormat(defaultFlags);
+			LeftTextStringFormatVerticalTop.Alignment		        = StringAlignment.Near;
+			LeftTextStringFormatVerticalTop.LineAlignment	        = StringAlignment.Near;
+			LeftTextStringFormatVerticalTop.Trimming		        = StringTrimming.EllipsisCharacter;
+
+			LeftMeasureStringFormatVerticalTop				        = new StringFormat(defaultFlags);
+			LeftMeasureStringFormatVerticalTop.Alignment		    = StringAlignment.Near;
+			LeftMeasureStringFormatVerticalTop.LineAlignment	    = StringAlignment.Near;
+			LeftMeasureStringFormatVerticalTop.Trimming		        = StringTrimming.None;
+
+			LeftTextStringFormatVerticalBottom 				        = new StringFormat(defaultFlags);
+			LeftTextStringFormatVerticalBottom.Alignment		    = StringAlignment.Near;
+			LeftTextStringFormatVerticalBottom.LineAlignment	    = StringAlignment.Far;
+			LeftTextStringFormatVerticalBottom.Trimming		        = StringTrimming.EllipsisCharacter;
+
+			LeftMeasureStringFormatVerticalBottom				    = new StringFormat(defaultFlags);
+			LeftMeasureStringFormatVerticalBottom.Alignment		    = StringAlignment.Near;
+			LeftMeasureStringFormatVerticalBottom.LineAlignment	    = StringAlignment.Far;
+			LeftMeasureStringFormatVerticalBottom.Trimming		    = StringTrimming.None;
 		}
 	}
 }

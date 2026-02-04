@@ -27,13 +27,14 @@ using System.Text;
 using System.Windows.Forms;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.IO;
 
 namespace Graph.Items
 {
 	public sealed class NodeCheckboxItem : NodeItem
 	{
-		public NodeCheckboxItem(string text, bool inputEnabled, bool outputEnabled) :
-			base(inputEnabled, outputEnabled)
+		public NodeCheckboxItem(string name, string text, InOutMode ioMode = InOutMode.NONE) :
+			base(name, ioMode)
 		{
 			this.Text = text;
 		}
@@ -87,7 +88,7 @@ namespace Graph.Items
 				{
 					var size = new Size(GraphConstants.MinimumItemWidth, GraphConstants.MinimumItemHeight);
 
-					this.TextSize = graphics.MeasureString(this.Text, SystemFonts.MenuFont, size, GraphConstants.CenterMeasureTextStringFormat);
+					this.TextSize = graphics.MeasureString(this.Text, SystemFonts.MenuFont, size, GraphConstants.CenterMeasureTextStringFormatVerticalCenter);
 
 					this.TextSize.Width	 = Math.Max(size.Width, this.TextSize.Width);
 					this.TextSize.Height = Math.Max(size.Height, this.TextSize.Height);
@@ -122,7 +123,7 @@ namespace Graph.Items
 						graphics.FillPath(brush, path);
 					}
 				}
-				graphics.DrawString(this.Text, SystemFonts.MenuFont, Brushes.Black, rect, GraphConstants.CenterTextStringFormat);
+				graphics.DrawString(this.Text, SystemFonts.MenuFont, Brushes.Black, rect, GraphConstants.CenterTextStringFormatVerticalCenter);
 
 				if ((state & RenderState.Hover) != 0)
 					graphics.DrawPath(Pens.White, path);
@@ -130,5 +131,20 @@ namespace Graph.Items
 					graphics.DrawPath(Pens.Black, path);
 			}
 		}
+
+        public override void WriteNodeItemData( StreamWriter file )
+        {
+            file.WriteLine("SET \"" + Name + "\"" + ",\"" + Checked.ToString() + "\"");
+        }
+
+        public override void SetNodeItemData(string val)
+        {
+            Checked = bool.Parse(val);
+        }
+
+        public override string GetNodeItemData()
+        {
+            return Checked.ToString();
+        }
 	}
 }

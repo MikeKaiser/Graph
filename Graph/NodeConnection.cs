@@ -53,7 +53,7 @@ namespace Graph
 		public NodeConnector	From	{ get; set; }
 		public NodeConnector	To		{ get; set; }
 		public string			Name	{ get; set; }
-		public object			Tag		{ get; set; }
+		public object			NodeConnectionTag		{ get; set; }
 		
 		internal RenderState	state;
 		internal RectangleF		bounds;

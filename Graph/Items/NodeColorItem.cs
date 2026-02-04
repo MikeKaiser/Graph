@@ -27,6 +27,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.IO;
 
 namespace Graph.Items
 {
@@ -34,8 +35,8 @@ namespace Graph.Items
 	{
 		public event EventHandler<NodeItemEventArgs> Clicked;
 
-		public NodeColorItem(string text, Color color, bool inputEnabled, bool outputEnabled) :
-			base(inputEnabled, outputEnabled)
+		public NodeColorItem(string name, string text, Color color, InOutMode ioMode = InOutMode.NONE) :
+			base(name, ioMode)
 		{
 			this.Text = text;
 			this.Color = color;
@@ -83,11 +84,11 @@ namespace Graph.Items
 					if (this.Input.Enabled != this.Output.Enabled)
 					{
 						if (this.Input.Enabled)
-							this.TextSize = graphics.MeasureString(this.Text, SystemFonts.MenuFont, size, GraphConstants.LeftMeasureTextStringFormat);
+							this.TextSize = graphics.MeasureString(this.Text, SystemFonts.MenuFont, size, GraphConstants.LeftMeasureTextStringFormatVerticalCenter);
 						else
-							this.TextSize = graphics.MeasureString(this.Text, SystemFonts.MenuFont, size, GraphConstants.RightMeasureTextStringFormat);
+							this.TextSize = graphics.MeasureString(this.Text, SystemFonts.MenuFont, size, GraphConstants.RightMeasureTextStringFormatVerticalCenter);
 					} else
-						this.TextSize = graphics.MeasureString(this.Text, SystemFonts.MenuFont, size, GraphConstants.CenterMeasureTextStringFormat);
+						this.TextSize = graphics.MeasureString(this.Text, SystemFonts.MenuFont, size, GraphConstants.CenterMeasureTextStringFormatVerticalCenter);
 
 					this.TextSize.Width  = Math.Max(size.Width, this.TextSize.Width + ColorBoxSize + Spacing);
 					this.TextSize.Height = Math.Max(size.Height, this.TextSize.Height);
@@ -106,17 +107,17 @@ namespace Graph.Items
 			size.Height = Math.Max(minimumSize.Height, size.Height);
 
 			var alignment	= HorizontalAlignment.Center;
-			var format		= GraphConstants.CenterTextStringFormat;
+			var format		= GraphConstants.CenterTextStringFormatVerticalCenter;
 			if (this.Input.Enabled != this.Output.Enabled)
 			{
 				if (this.Input.Enabled)
 				{
 					alignment	= HorizontalAlignment.Left;
-					format		= GraphConstants.LeftTextStringFormat;
+					format		= GraphConstants.LeftTextStringFormatVerticalCenter;
 				} else
 				{
 					alignment	= HorizontalAlignment.Right;
-					format		= GraphConstants.RightTextStringFormat;
+					format		= GraphConstants.RightTextStringFormatVerticalCenter;
 				}
 			}
 
@@ -158,5 +159,11 @@ namespace Graph.Items
 			//}
 			//graphics.DrawRectangle(Pens.Black, colorBox.X, colorBox.Y, colorBox.Width, colorBox.Height);
 		}
+
+
+        public override void WriteNodeItemData(StreamWriter file)
+        {
+            file.WriteLine("SET \"" + Name + "\"" + ",\"" + Color.ToString() + "\"");
+        }
 	}
 }

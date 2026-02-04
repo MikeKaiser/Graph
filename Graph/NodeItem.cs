@@ -25,6 +25,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Drawing;
+using System.IO;
 
 namespace Graph
 {
@@ -36,20 +37,32 @@ namespace Graph
 
 	public abstract class NodeItem : IElement
 	{
+		public enum InOutMode
+		{
+			NONE,
+			INPUT,
+			OUTPUT,
+			INOUT
+		};
+
 		public NodeItem()
 		{
 			this.Input		= new NodeInputConnector(this, false);
 			this.Output		= new NodeOutputConnector(this, false);
 		}
 
-		public NodeItem(bool enableInput, bool enableOutput)
+		public NodeItem(string name, InOutMode ioMode)
 		{
-			this.Input		= new NodeInputConnector(this, enableInput);
-			this.Output		= new NodeOutputConnector(this, enableOutput);
+			this.Input		= new NodeInputConnector(this, ioMode == InOutMode.INPUT || ioMode == InOutMode.INOUT);
+			this.Output		= new NodeOutputConnector(this, ioMode == InOutMode.OUTPUT || ioMode == InOutMode.INOUT);
+            this.Name       = name;
 		}
 
 		public Node					Node			{ get; internal set; }
-		public object				Tag				{ get; set; }
+		public object				NodeItemTag		{ get; set; }
+        int                         type            = 0;
+        bool                        vertical        = false;
+		public string               Name    		{ get; set;	}
 
 		public NodeConnector		Input			{ get; private set; }
 		public NodeConnector		Output			{ get; private set; }
@@ -65,6 +78,21 @@ namespace Graph
 		internal abstract SizeF		Measure(Graphics context);
 		internal abstract void		Render(Graphics graphics, SizeF minimumSize, PointF position);
 
+        public void SetItemType( int t ) { type = t; }
+        public int GetItemType() { return type;  }
+        public void SetVertical( bool v ) { vertical = v; }
+
 		public ElementType ElementType { get { return ElementType.NodeItem; } }
+
+        public virtual void WriteNodeItemData( StreamWriter file ) { }
+        public virtual void SetNodeItemData(string val)
+        {
+            Console.WriteLine("NodeColorItem.SetNodeItemData not yet implemented.");
+        }
+        public virtual string GetNodeItemData()
+        {
+            Console.WriteLine("NodeColorItem.GetNodeItemData not yet implemented.");
+            return "";
+        }
 	}
 }

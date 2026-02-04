@@ -9,3 +9,8 @@
 *.vshost.exe
 *.vshost.exe.manifest
 *.csproj.user
+/.vs/config
+/.vs
+/GraphExample/bin
+/GraphExample/obj
+/Graph/bin/Release

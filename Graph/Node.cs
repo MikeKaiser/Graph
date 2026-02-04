@@ -27,6 +27,8 @@ using System.Text;
 using System.Drawing;
 using System.ComponentModel;
 using Graph.Items;
+using System.IO;
+using System.Windows.Forms;
 
 namespace Graph
 {
@@ -84,7 +86,7 @@ namespace Graph
 		public bool				HasNoItems		{ get { return nodeItems.Count == 0; } }
 
 		public PointF			Location		{ get; set; }
-		public object			Tag				{ get; set; }
+		public object			                NodeTag				    { get; set; }
 
 		public IEnumerable<NodeConnection>	Connections { get { return connections; } }
 		public IEnumerable<NodeItem>		Items		{ get { return nodeItems; } }
@@ -102,11 +104,22 @@ namespace Graph
 		internal readonly List<NodeConnection>	connections			= new List<NodeConnection>();
 		internal readonly NodeTitleItem			titleItem			= new NodeTitleItem();
 		readonly List<NodeItem>					nodeItems			= new List<NodeItem>();
+        private string                          m_guid              = "";
+        public string                           Guid                { get { return m_guid; } set { m_guid = value; } }
+        public int                              m_graphDepth        = 0;    // this is computed and used to figure out ordering information in the final CSV for easier Diffing
 
-		public Node(string title)
+        public enum GUIDMode
+        {
+            NoGUID,
+            GenerateGUID
+        };
+
+		public Node(string title, GUIDMode guidMode = Node.GUIDMode.GenerateGUID)
 		{
 			this.Title = title;
 			titleItem.Node = this;
+            if( guidMode == GUIDMode.GenerateGUID )
+                NewGUID();
 		}
 
 		public void AddItem(NodeItem item)
@@ -118,6 +131,18 @@ namespace Graph
 			nodeItems.Add(item);
 			item.Node = this;
 		}
+
+        public void AddItemTyped(NodeItem item, int type, bool vertical = false)
+        {
+            if (nodeItems.Contains(item))
+                return;
+            if (item.Node != null)
+                item.Node.RemoveItem(item);
+            item.SetItemType(type);
+            item.SetVertical(vertical);
+            nodeItems.Add(item);
+            item.Node = this;
+        }
 
 		public void RemoveItem(NodeItem item)
 		{
@@ -168,5 +193,132 @@ namespace Graph
 		}
 
 		public ElementType ElementType { get { return ElementType.Node; } }
+
+        public void SetGUID( string s )
+        {
+            m_guid = s;
+        }
+
+        public void NewGUID()
+        {
+            m_guid = System.Guid.NewGuid().ToString();
+        }
+
+        public virtual void WriteNodeData(StreamWriter file)
+        {
+            file.WriteLine("CREATE_NODE \"" + Title + "\",\"" + m_guid + "\",\"" + Location.X.ToString() + "\",\"" + Location.Y.ToString() + "\"");
+            foreach( NodeItem i in nodeItems )
+            {
+                i.WriteNodeItemData(file);
+            }
+        }
+
+        public virtual void GetConnectionData(ref HashSet<string> links)
+        {
+		    foreach( NodeConnection c in connections )
+            {
+                links.Add( "\""+c.From.Node.m_guid+"\",\""+c.From.Item.Name+"\""+",\""+c.To.Node.m_guid+"\",\""+c.To.Item.Name+"\"" );
+            }
+        }
+
+        public static void ShowError( string message )
+        {
+		    DialogResult result = MessageBox.Show(message, "Error", MessageBoxButtons.OK);
+        }
+
+        public string NodeItemsAsString()
+        {
+            string ret = "[";
+            ret += nodeItems[0];
+            for( int i=1; i<nodeItems.Count; ++i )
+                ret += ", " + nodeItems[i].Name;
+            ret += "]";
+            return ret;
+        }
+
+        public void Set( string id, string val )
+        {
+            NodeItem item = nodeItems.Find(x => (x.Name == id));
+            if( item != null )
+                item.SetNodeItemData( val );
+            else
+            {
+                ShowError( "Unable to find id:" + id + " in " + NodeItemsAsString() );
+            }
+        }
+
+        public string GetItemString( string id )
+        {
+            NodeItem item = nodeItems.Find(x => (x.Name == id));
+            if (item != null)
+                return item.GetNodeItemData();
+            return "";
+        }
+
+        public int GetItemInt( string id )
+        {
+            NodeItem item = nodeItems.Find(x => (x.Name == id));
+            if (item != null)
+            {
+                int ret = 0;
+                int.TryParse( item.GetNodeItemData(), out ret );
+                return ret;
+            }
+            return 0;
+        }
+
+        public NodeConnector GetOutputConnector(string id)
+        {
+            NodeItem item = nodeItems.Find(x => (x.Name == id));
+            if( item != null)
+                return item.Output;
+            else
+            {
+                ShowError( "Unable to find id:" + id + " in " + NodeItemsAsString() );
+                return null;
+            }
+        }
+
+        public NodeConnector GetInputConnector(string id)
+        {
+            NodeItem item = nodeItems.Find(x => (x.Name == id));
+            if( item != null)
+                return item.Input;
+            else
+            {
+                ShowError( "Unable to find id:" + id + " in " + NodeItemsAsString() );
+                return null;
+            }
+        }
+
+        public string GetInputLinkGuid(string id)
+        {
+            foreach (NodeConnection c in connections)
+            {
+                if (c.To.Node == this && c.To.Item.Name == id)
+                    return c.From.Node.Guid;
+            }
+            return "00000000-0000-0000-0000-000000000000";
+        }
+
+        public string GetOutputLinkGuid(string id)
+        {
+            foreach (NodeConnection c in connections)
+            {
+                if (c.From.Node == this && c.From.Item.Name == id)
+                    return c.To.Node.Guid;
+            }
+            return "00000000-0000-0000-0000-000000000000";
+        }
+
+        public Node GetOutputNode(string id)
+        {
+            foreach (NodeConnection c in connections)
+            {
+                if (c.From.Node == this && c.From.Item.Name == id)
+                    return c.To.Node;
+            }
+            return null;
+        }
 	}
 }

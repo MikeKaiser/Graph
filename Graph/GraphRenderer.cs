@@ -124,15 +124,18 @@ namespace Graph
 			}
 		}
 
-		public static void PerformLayout(Graphics graphics, IEnumerable<Node> nodes)
+		public static void PerformLayout(Graphics graphics, IEnumerable<Node> nodes, PointF minBounds, PointF maxBounds)
 		{
 			foreach (var node in nodes.Reverse<Node>())
 			{
+				if((node.bounds.Bottom < minBounds.Y || node.bounds.Top > maxBounds.Y) && !node.state.HasFlag(RenderState.Dragging) && !node.state.HasFlag(RenderState.Focus) )
+					continue;
+
 				GraphRenderer.PerformLayout(graphics, node);
 			}
 		}
 
-		public static void Render(Graphics graphics, IEnumerable<Node> nodes, bool showLabels)
+		public static void Render(Graphics graphics, IEnumerable<Node> nodes, PointF minBounds, PointF maxBounds, bool showLabels)
 		{
 			var skipConnections = new HashSet<NodeConnection>();
 			foreach (var node in nodes.Reverse<Node>())
@@ -141,6 +144,8 @@ namespace Graph
 			}
 			foreach (var node in nodes.Reverse<Node>())
 			{
+				if((node.bounds.Bottom < minBounds.Y || node.bounds.Top > maxBounds.Y) && !node.state.HasFlag(RenderState.Dragging) && !node.state.HasFlag(RenderState.Focus) )
+					continue;
 				GraphRenderer.Render(graphics, node);
 			}
 		}
@@ -420,7 +425,7 @@ namespace Graph
 				if (connection.textBounds.IsEmpty ||
 					connection.textBounds.Location != center)
 				{
-					size		= graphics.MeasureString(text, SystemFonts.StatusFont, center, GraphConstants.CenterTextStringFormat);
+					size		= graphics.MeasureString(text, SystemFonts.StatusFont, center, GraphConstants.CenterTextStringFormatVerticalCenter);
 					position	= new PointF(center.X - (size.Width / 2.0f) - halfConnectorSize, center.Y - (size.Height / 2.0f));
 					size.Width	+= connectorSize;
 					connection.textBounds = new RectangleF(position, size);
@@ -448,7 +453,7 @@ namespace Graph
 				{
 					graphics.FillPath(brush, path);
 				}
-				graphics.DrawString(text, SystemFonts.StatusFont, Brushes.Black, center, GraphConstants.CenterTextStringFormat);
+				graphics.DrawString(text, SystemFonts.StatusFont, Brushes.Black, center, GraphConstants.CenterTextStringFormatVerticalCenter);
 
 				if (state == RenderState.None)
 					graphics.DrawPath(Pens.Black, path);
@@ -483,44 +488,47 @@ namespace Graph
 			return region;
 		}
 
-		static Color GetArrowLineColor(RenderState state)
+		static Color GetArrowLineColor(RenderState state)	// TODO : Mike : Make this Data Driven
 		{
 			if ((state & (RenderState.Hover | RenderState.Dragging)) != 0)
 			{
 				if ((state & RenderState.Incompatible) != 0)
 				{
 					return Color.Red;
-				} else
-				if ((state & RenderState.Compatible) != 0)
+				}
+				else if ((state & RenderState.Compatible) != 0)
 				{
 					return Color.DarkOrange;
-				} else
-				if ((state & RenderState.Dragging) != 0)
+				}
+				else if ((state & RenderState.Dragging) != 0)
 					return Color.SteelBlue;
 				else
 					return Color.DarkOrange;
-			} else
-			if ((state & RenderState.Incompatible) != 0)
+			}
+			else if ((state & RenderState.Incompatible) != 0)
 			{
 				return Color.Gray;
-			} else
-			if ((state & RenderState.Compatible) != 0)
+			}
+			else if ((state & RenderState.Compatible) != 0)
 			{
 				return Color.White;
-			} else
-			if ((state & RenderState.Connected) != 0)
+			}
+			else if ((state & RenderState.Connected) != 0)
 			{
-				return Color.Black;
-			} else
+				return Color.DarkSeaGreen;
+			}
+			else
 				return Color.LightGray;
 		}
 		
 		static PointF[] GetArrowPoints(float x, float y, float extra_thickness = 0)
 		{
-			return new PointF[]{
+			return new PointF[]
+			{
 					new PointF(x - (GraphConstants.ConnectorSize + 1.0f) - extra_thickness, y + (GraphConstants.ConnectorSize / 1.5f) + extra_thickness),
 					new PointF(x + 1.0f + extra_thickness, y),
-					new PointF(x - (GraphConstants.ConnectorSize + 1.0f) - extra_thickness, y - (GraphConstants.ConnectorSize / 1.5f) - extra_thickness)};
+					new PointF(x - (GraphConstants.ConnectorSize + 1.0f) - extra_thickness, y - (GraphConstants.ConnectorSize / 1.5f) - extra_thickness)
+			};
 		}
 
 		static List<PointF> GetArrowLinePoints(float x1, float y1, float x2, float y2, out float centerX, out float centerY, float extra_thickness = 0)

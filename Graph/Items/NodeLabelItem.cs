@@ -31,14 +31,14 @@ namespace Graph.Items
 {
 	public sealed class NodeLabelItem : NodeItem
 	{
-		public NodeLabelItem(string text, bool inputEnabled, bool outputEnabled) :
-			base(inputEnabled, outputEnabled)
+		public NodeLabelItem(string name, string text, InOutMode ioMode = InOutMode.NONE) :
+			base(name, ioMode)
 		{
 			this.Text = text;
 		}
 
-		public NodeLabelItem(string text) :
-			this(text, false, false) { }
+		public NodeLabelItem(string name, string text) :
+			this(name, text, InOutMode.NONE) { }
 
 		#region Text
 		string internalText = string.Empty;
@@ -69,11 +69,11 @@ namespace Graph.Items
 					if (this.Input.Enabled != this.Output.Enabled)
 					{
 						if (this.Input.Enabled)
-							this.TextSize = graphics.MeasureString(this.Text, SystemFonts.MenuFont, size, GraphConstants.LeftMeasureTextStringFormat);
+							this.TextSize = graphics.MeasureString(this.Text, SystemFonts.MenuFont, size, GraphConstants.LeftMeasureTextStringFormatVerticalCenter);
 						else
-							this.TextSize = graphics.MeasureString(this.Text, SystemFonts.MenuFont, size, GraphConstants.RightMeasureTextStringFormat);
+							this.TextSize = graphics.MeasureString(this.Text, SystemFonts.MenuFont, size, GraphConstants.RightMeasureTextStringFormatVerticalCenter);
 					} else
-						this.TextSize = graphics.MeasureString(this.Text, SystemFonts.MenuFont, size, GraphConstants.CenterMeasureTextStringFormat);
+						this.TextSize = graphics.MeasureString(this.Text, SystemFonts.MenuFont, size, GraphConstants.CenterMeasureTextStringFormatVerticalCenter);
 
 					this.TextSize.Width  = Math.Max(size.Width, this.TextSize.Width);
 					this.TextSize.Height = Math.Max(size.Height, this.TextSize.Height);
@@ -94,11 +94,11 @@ namespace Graph.Items
 			if (this.Input.Enabled != this.Output.Enabled)
 			{
 				if (this.Input.Enabled)
-					graphics.DrawString(this.Text, SystemFonts.MenuFont, Brushes.Black, new RectangleF(location, size), GraphConstants.LeftTextStringFormat);
+					graphics.DrawString(this.Text, SystemFonts.MenuFont, Brushes.Black, new RectangleF(location, size), GraphConstants.LeftTextStringFormatVerticalCenter);
 				else
-					graphics.DrawString(this.Text, SystemFonts.MenuFont, Brushes.Black, new RectangleF(location, size), GraphConstants.RightTextStringFormat);
+					graphics.DrawString(this.Text, SystemFonts.MenuFont, Brushes.Black, new RectangleF(location, size), GraphConstants.RightTextStringFormatVerticalCenter);
 			} else
-				graphics.DrawString(this.Text, SystemFonts.MenuFont, Brushes.Black, new RectangleF(location, size), GraphConstants.CenterTextStringFormat);
+				graphics.DrawString(this.Text, SystemFonts.MenuFont, Brushes.Black, new RectangleF(location, size), GraphConstants.CenterTextStringFormatVerticalCenter);
 		}
 	}
 }

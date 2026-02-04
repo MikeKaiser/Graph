@@ -27,6 +27,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Drawing;
 using System.ComponentModel;
+using System.IO;
 
 namespace Graph.Items
 {
@@ -41,21 +42,16 @@ namespace Graph.Items
 	public sealed class NodeDropDownItem : NodeItem
 	{
 		public event EventHandler<AcceptNodeSelectionChangedEventArgs> SelectionChanged;
+        static Font m_font;
 
-		public NodeDropDownItem(string[] items, int selectedIndex, bool inputEnabled, bool outputEnabled) :
-			base(inputEnabled, outputEnabled)
+		public NodeDropDownItem(string name, string[] items, int selectedIndex, InOutMode ioMode = InOutMode.NONE) :
+			base(name, ioMode)
 		{
 			this.Items = items.ToArray();
 			this.SelectedIndex = selectedIndex;
+            if (m_font == null)
+                m_font = new Font(SystemFonts.MenuFont.OriginalFontName, SystemFonts.MenuFont.Height / 4, FontStyle.Regular);
 		}
-
-		#region Name
-		public string Name
-		{
-			get;
-			set;
-		}
-		#endregion
 
 		#region SelectedIndex
 		private int internalSelectedIndex = -1;
@@ -89,6 +85,7 @@ namespace Graph.Items
 		#endregion
 
 		internal SizeF TextSize;
+		internal SizeF LabelSize;
 
 		public override bool OnDoubleClick()
 		{
@@ -106,25 +103,49 @@ namespace Graph.Items
 		internal override SizeF Measure(Graphics graphics)
 		{
 			var text = string.Empty;
-			if (Items != null &&
-				SelectedIndex >= 0 && SelectedIndex < Items.Length)
+            SizeF labelSize;
+            SizeF textSize;
+
+            if (Items != null && SelectedIndex >= 0 && SelectedIndex < Items.Length)
 				text = Items[SelectedIndex];
+
 			if (!string.IsNullOrWhiteSpace(text))
 			{
 				if (this.TextSize.IsEmpty)
 				{
 					var size = new Size(GraphConstants.MinimumItemWidth, GraphConstants.MinimumItemHeight);
 
-					this.TextSize = graphics.MeasureString(text, SystemFonts.MenuFont, size, GraphConstants.LeftMeasureTextStringFormat);
+					this.TextSize = graphics.MeasureString(text, SystemFonts.MenuFont, size, GraphConstants.LeftMeasureTextStringFormatVerticalCenter);
 					
 					this.TextSize.Width  = Math.Max(size.Width, this.TextSize.Width + 8);
 					this.TextSize.Height = Math.Max(size.Height, this.TextSize.Height + 2);
 				}
-				return this.TextSize;
-			} else
+				textSize = this.TextSize;
+            }
+            else
+            {
+                textSize = new SizeF(GraphConstants.MinimumItemWidth, GraphConstants.MinimumItemHeight/2);
+            }
+
+			if (!string.IsNullOrWhiteSpace(Name))
 			{
-				return new SizeF(GraphConstants.MinimumItemWidth, GraphConstants.MinimumItemHeight);
+				if (this.LabelSize.IsEmpty)
+				{
+					var size = new Size(GraphConstants.MinimumItemWidth, GraphConstants.MinimumItemHeight/2);
+
+					this.LabelSize = graphics.MeasureString(Name, m_font, size, GraphConstants.LeftMeasureTextStringFormatVerticalCenter);
+					
+					this.LabelSize.Width  = Math.Max(size.Width, this.LabelSize.Width + 8);
+					this.LabelSize.Height = Math.Max(size.Height, this.LabelSize.Height + 2);
+				}
+				labelSize = this.LabelSize;
 			}
+            else
+			{
+				labelSize = new SizeF(GraphConstants.MinimumItemWidth, GraphConstants.MinimumItemHeight/2);
+			}
+
+            return new SizeF( Math.Max( textSize.Width, labelSize.Width ), textSize.Height + labelSize.Height );
 		}
 
 		internal override void Render(Graphics graphics, SizeF minimumSize, PointF location)
@@ -143,15 +164,39 @@ namespace Graph.Items
 			location.Y += 1;
 			location.X += 1;
 
+            Pen pathPen = Pens.White;
 			if ((state & RenderState.Hover) == RenderState.Hover)
 			{
-				graphics.DrawPath(Pens.White, path);
-				graphics.DrawString(text, SystemFonts.MenuFont, Brushes.Black, new RectangleF(location, size), GraphConstants.LeftTextStringFormat);
-			} else
-			{
-				graphics.DrawPath(Pens.Black, path);
-				graphics.DrawString(text, SystemFonts.MenuFont, Brushes.Black, new RectangleF(location, size), GraphConstants.LeftTextStringFormat);
+				pathPen = Pens.White;
 			}
+            else
+			{
+				pathPen = Pens.Black;
+			}
+
+			graphics.DrawPath(pathPen, path);
+			graphics.DrawString(text, SystemFonts.MenuFont, Brushes.Black, new RectangleF(location, size), GraphConstants.LeftTextStringFormatVerticalBottom);
+			graphics.DrawString(Name, m_font,               Brushes.Black, new RectangleF(location, size), GraphConstants.LeftTextStringFormatVerticalTop);
+		}
+
+        public override void WriteNodeItemData( StreamWriter file )
+			{
+            file.WriteLine("SET \"" + Name + "\"" + ",\"" + Items[SelectedIndex] + "\"");
+			}
+        public override void SetNodeItemData(string val)
+        {
+            for (int i = 0; i < Items.Length; ++i)
+            {
+                if (Items[i] == val)
+                {
+                    SelectedIndex = i;
+                    break;
+                }
+            }
+        }
+        public override string GetNodeItemData()
+        {
+            return Items[SelectedIndex];
 		}
 	}
 }
